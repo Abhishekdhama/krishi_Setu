@@ -8,9 +8,34 @@ from sentence_transformers import SentenceTransformer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 from io import BytesIO
+from dotenv import load_dotenv
+import requests
 
+# Load environment variables
+load_dotenv()
 
-import ollama
+# Try importing ollama with error handling
+try:
+    import ollama
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    OLLAMA_AVAILABLE = False
+    st.warning("⚠️ Ollama library not found. Please install it: `pip install ollama`")
+
+# Check if Ollama server is running
+def check_ollama_connection():
+    """Check if Ollama server is accessible"""
+    if not OLLAMA_AVAILABLE:
+        return False
+    
+    try:
+        ollama_host = os.getenv('OLLAMA_HOST', 'http://localhost:11434')
+        response = requests.get(f"{ollama_host}/api/tags", timeout=2)
+        return response.status_code == 200
+    except:
+        return False
+
+OLLAMA_RUNNING = check_ollama_connection()
 
 class RAGPipeline:
     def __init__(self, index, metadata, model_name='all-MiniLM-L6-v2', llm_model='mistral'):
@@ -27,6 +52,10 @@ class RAGPipeline:
         return [self.metadata[i] for i in indices[0]]
 
     def generate(self, question, context_chunks):
+        """Generate answer using LLM with error handling"""
+        if not OLLAMA_RUNNING:
+            return "⚠️ **Ollama is not running.** Please start Ollama to get AI-generated answers.\n\nTo start Ollama:\n1. Install from https://ollama.ai\n2. Run: `ollama serve`\n3. Pull model: `ollama pull mistral`"
+        
         context_str = "\n\n---\n\n".join([chunk['content'] for chunk in context_chunks])
         prompt = f"""
         **Instruction:** Answer the user's question based only on the provided context.
@@ -39,8 +68,12 @@ class RAGPipeline:
 
         **Answer:**
         """
-        response = ollama.chat(model=self.llm_model, messages=[{'role': 'user', 'content': prompt}])
-        return response['message']['content']
+        
+        try:
+            response = ollama.chat(model=self.llm_model, messages=[{'role': 'user', 'content': prompt}])
+            return response['message']['content']
+        except Exception as e:
+            return f"❌ **Error generating response:** {str(e)}\n\nPlease ensure Ollama is running and the '{self.llm_model}' model is installed."
 
 @st.cache_resource
 def load_main_pipeline():
@@ -83,6 +116,20 @@ st.set_page_config(page_title="MeghSutra AI", page_icon="🌧️", layout="wide"
 
 with st.sidebar:
     st.title("MeghSutra AI 🌧️")
+    
+    # Ollama Status Indicator
+    if OLLAMA_RUNNING:
+        st.success("✅ Ollama Connected")
+    else:
+        st.error("❌ Ollama Not Running")
+        with st.expander("📖 How to setup Ollama"):
+            st.markdown("""
+            1. **Install Ollama**: Visit [ollama.ai](https://ollama.ai)
+            2. **Start Server**: Run `ollama serve` in terminal
+            3. **Pull Model**: Run `ollama pull mistral`
+            4. **Refresh** this page
+            """)
+    
     st.markdown("---")
     st.markdown("### Choose Your Knowledge Base")
 
