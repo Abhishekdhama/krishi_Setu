@@ -10,35 +10,21 @@ from pypdf import PdfReader
 from io import BytesIO
 from dotenv import load_dotenv
 import requests
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
 
-# Try importing ollama with error handling
-try:
-    import ollama
-    OLLAMA_AVAILABLE = True
-except ImportError:
-    OLLAMA_AVAILABLE = False
-    st.warning("⚠️ Ollama library not found. Please install it: `pip install ollama`")
-
-# Check if Ollama server is running
-def check_ollama_connection():
-    """Check if Ollama server is accessible"""
-    if not OLLAMA_AVAILABLE:
-        return False
-    
-    try:
-        ollama_host = os.getenv('OLLAMA_HOST', 'http://localhost:11434')
-        response = requests.get(f"{ollama_host}/api/tags", timeout=2)
-        return response.status_code == 200
-    except:
-        return False
-
-OLLAMA_RUNNING = check_ollama_connection()
+# Configure Gemini API
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+if GEMINI_API_KEY and GEMINI_API_KEY != 'your_gemini_api_key_here':
+    genai.configure(api_key=GEMINI_API_KEY)
+    GEMINI_AVAILABLE = True
+else:
+    GEMINI_AVAILABLE = False
 
 class RAGPipeline:
-    def __init__(self, index, metadata, model_name='all-MiniLM-L6-v2', llm_model='mistral'):
+    def __init__(self, index, metadata, model_name='all-MiniLM-L6-v2', llm_model='phi3'):
         self.index = index
         self.metadata = metadata
         self.llm_model = llm_model
@@ -52,28 +38,57 @@ class RAGPipeline:
         return [self.metadata[i] for i in indices[0]]
 
     def generate(self, question, context_chunks):
-        """Generate answer using LLM with error handling"""
-        if not OLLAMA_RUNNING:
-            return "⚠️ **Ollama is not running.** Please start Ollama to get AI-generated answers.\n\nTo start Ollama:\n1. Install from https://ollama.ai\n2. Run: `ollama serve`\n3. Pull model: `ollama pull mistral`"
+        """Generate AI summary using Gemini API or show documents"""
         
         context_str = "\n\n---\n\n".join([chunk['content'] for chunk in context_chunks])
-        prompt = f"""
-        **Instruction:** Answer the user's question based only on the provided context.
-        If the context does not contain the answer, state that you cannot answer.
-
-        **Context:**
-        {context_str}
-
-        **User's Question:** {question}
-
-        **Answer:**
-        """
         
-        try:
-            response = ollama.chat(model=self.llm_model, messages=[{'role': 'user', 'content': prompt}])
-            return response['message']['content']
-        except Exception as e:
-            return f"❌ **Error generating response:** {str(e)}\n\nPlease ensure Ollama is running and the '{self.llm_model}' model is installed."
+        if GEMINI_AVAILABLE:
+            try:
+                # Use Gemini API for fast AI responses
+                model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                prompt = f"""Based on the following context from climate documents, answer the user's question concisely and accurately.
+
+Context:
+{context_str[:4000]}  # Limit context to avoid token limits
+
+Question: {question}
+
+Provide a clear, concise answer based only on the information in the context. If the context doesn't contain enough information, say so."""
+                
+                response = model.generate_content(prompt)
+                
+                # Add sources
+                sources = set(chunk.get('source_file', 'Unknown') for chunk in context_chunks)
+                sources_text = "\n\n**Sources:**\n" + "\n".join([f"- {s}" for s in sources])
+                
+                return response.text + sources_text
+                
+            except Exception as e:
+                return f"⚠️ **Gemini API Error:** {str(e)}\n\nShowing document excerpts instead:\n\n{context_str[:1000]}..."
+        
+        else:
+            # Fallback: Show document excerpts
+            context_parts = []
+            for i, chunk in enumerate(context_chunks, 1):
+                source = chunk.get('source_file', 'Unknown')
+                content = chunk.get('content', '')
+                context_parts.append(f"**Source {i}: {source}**\n\n{content}\n")
+            
+            formatted_context = "\n---\n\n".join(context_parts)
+            
+            return f"""📚 **Retrieved Information:**
+
+{formatted_context}
+
+---
+
+💡 **To enable AI-generated summaries:**
+1. Get a free Gemini API key: https://makersuite.google.com/app/apikey
+2. Add to `.env` file: `GEMINI_API_KEY=your_key_here`
+3. Restart the app
+
+✨ **Gemini API is FREE** and provides instant AI responses!
+"""
 
 @st.cache_resource
 def load_main_pipeline():
@@ -117,17 +132,19 @@ st.set_page_config(page_title="MeghSutra AI", page_icon="🌧️", layout="wide"
 with st.sidebar:
     st.title("MeghSutra AI 🌧️")
     
-    # Ollama Status Indicator
-    if OLLAMA_RUNNING:
-        st.success("✅ Ollama Connected")
+    # Gemini API Status Indicator
+    if GEMINI_AVAILABLE:
+        st.success("✅ Gemini AI Connected")
     else:
-        st.error("❌ Ollama Not Running")
-        with st.expander("📖 How to setup Ollama"):
+        st.warning("⚠️ Using Document Mode")
+        with st.expander("📖 Enable AI Summaries"):
             st.markdown("""
-            1. **Install Ollama**: Visit [ollama.ai](https://ollama.ai)
-            2. **Start Server**: Run `ollama serve` in terminal
-            3. **Pull Model**: Run `ollama pull mistral`
-            4. **Refresh** this page
+            1. **Get Free API Key**: Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
+            2. **Create `.env` file** in project folder
+            3. **Add**: `GEMINI_API_KEY=your_key_here`
+            4. **Restart** this app
+            
+            ✨ Gemini API is FREE and instant!
             """)
     
     st.markdown("---")
