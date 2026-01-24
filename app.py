@@ -316,7 +316,7 @@ def render_hero():
     </div>
     """, unsafe_allow_html=True)
 
-# Navigation Cards - Compact
+# Navigation Cards - Compact (for Sidebar)
 def render_navigation():
     if 'active_page' not in st.session_state:
         st.session_state.active_page = 'Chat'
@@ -327,18 +327,15 @@ def render_navigation():
         {'name': 'Explorer', 'icon': '🗺️'}
     ]
     
-    cols = st.columns([5, 1, 1, 1])  # Spacer + 3 small cards
-    
-    for idx, item in enumerate(nav_items):
-        with cols[idx + 1]:
-            if st.button(
-                f"{item['icon']} {item['name']}",
-                key=f"nav_{item['name']}",
-                use_container_width=True,
-                type="primary" if st.session_state.active_page == item['name'] else "secondary"
-            ):
-                st.session_state.active_page = item['name']
-                st.rerun()
+    for item in nav_items:
+        if st.button(
+            f"{item['icon']} {item['name']}",
+            key=f"nav_{item['name']}",
+            use_container_width=True,
+            type="primary" if st.session_state.active_page == item['name'] else "secondary"
+        ):
+            st.session_state.active_page = item['name']
+            st.rerun()
 
 # Stats Cards
 def render_stats():
@@ -377,9 +374,18 @@ def main():
     if 'active_page' not in st.session_state:
         st.session_state.active_page = 'Chat'
 
-    # Sidebar
+    # Sidebar with Navigation
     with st.sidebar:
         st.markdown("### 🌦️ MeghSutra AI")
+        st.markdown("---")
+        
+        # Navigation Cards in Sidebar
+        st.markdown("#### Navigation")
+        render_navigation()
+        
+        st.markdown("---")
+        
+        # Project Metrics
         render_stats()
         
         st.markdown("---")
@@ -407,12 +413,7 @@ def main():
             st.session_state.messages = []
             st.success("Switched to main climate database.")
     
-    # Top Header Row
-    render_hero()
-    render_navigation()
-    
-    st.markdown("---")
-    
+    # Main content area - NO header, just content
     # Split View: Chat on left, Content on right
     if st.session_state.active_page == 'Chat':
         # Full width for chat only
