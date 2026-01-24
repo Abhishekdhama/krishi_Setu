@@ -45,14 +45,29 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
     
-    /* Main Background */
+    /* Main Background - Force gradient everywhere */
     .stApp {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
     }
     
-    /* Remove black backgrounds */
+    /* Remove ALL black backgrounds */
     .main .block-container {
         background: transparent !important;
+        padding-bottom: 0 !important;
+    }
+    
+    .main {
+        background: transparent !important;
+    }
+    
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+    }
+    
+    /* Remove bottom padding/margin that creates black space */
+    .block-container {
+        padding-bottom: 1rem !important;
+        margin-bottom: 0 !important;
     }
     
     /* Hide Streamlit menu and footer */
