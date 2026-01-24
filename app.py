@@ -413,7 +413,9 @@ def main():
             st.session_state.messages = []
             st.success("Switched to main climate database.")
     
-    # Main content area - NO header, just content
+    # Main content area with header
+    render_hero()
+    
     # Split View: Chat on left, Content on right
     if st.session_state.active_page == 'Chat':
         # Full width for chat only
@@ -434,20 +436,6 @@ def main():
 
 def render_chat_tab():
     st.markdown("### 💬 Chat with MeghSutra AI")
-    
-    # File upload with + icon
-    with st.expander("➕ Upload Document (Optional)", expanded=False):
-        uploaded_file = st.file_uploader(
-            "Drop your PDF here or click to browse",
-            type="pdf",
-            help="Upload a climate-related PDF for analysis"
-        )
-        if uploaded_file:
-            if st.button("📄 Process Document", type="primary"):
-                with st.spinner("Processing..."):
-                    st.session_state.active_pipeline = create_temp_pipeline_from_file(uploaded_file)
-                    st.session_state.messages = []
-                    st.success(f"✅ {uploaded_file.name} loaded!")
     
     render_chat_panel()
 
