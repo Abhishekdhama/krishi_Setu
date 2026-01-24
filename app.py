@@ -53,15 +53,16 @@ st.markdown("""
     /* Hero Section */
     .hero-section {
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        padding: 3rem 2rem;
+        padding: 2rem 2rem;
         border-radius: 20px;
         margin-bottom: 2rem;
         box-shadow: 0 20px 60px rgba(59, 130, 246, 0.3);
         animation: fadeIn 0.8s ease-in;
+        text-align: center; /* Center hero text */
     }
     
     .hero-title {
-        font-size: 3.5rem;
+        font-size: 2.8rem; /* Slightly smaller for balance */
         font-weight: 700;
         color: white;
         margin-bottom: 0.5rem;
@@ -109,17 +110,20 @@ st.markdown("""
     
     /* Tab Styling */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 12px;
         background-color: rgba(255, 255, 255, 0.05);
         border-radius: 15px;
-        padding: 8px;
+        padding: 4px;
+        justify-content: center; /* Center tabs */
+        max-width: fit-content;
+        margin: 0 auto;
     }
     
     .stTabs [data-baseweb="tab"] {
         border-radius: 10px;
         color: #94a3b8;
         font-weight: 600;
-        padding: 12px 24px;
+        padding: 6px 16px; /* Compact padding */
         transition: all 0.3s ease;
     }
     
@@ -298,9 +302,10 @@ def render_hero():
 def render_stats():
     df = load_rainfall_data()
     
-    col1, col2, col3, col4 = st.columns(4)
+    # Using 6 columns to center the 4 middle cards
+    cols = st.columns([1, 2, 2, 2, 2, 1])
     
-    with col1:
+    with cols[1]:
         st.markdown("""
         <div class="stats-card fade-in">
             <div class="stats-number">36</div>
@@ -308,7 +313,7 @@ def render_stats():
         </div>
         """, unsafe_allow_html=True)
     
-    with col2:
+    with cols[2]:
         years = df['Year'].nunique() if df is not None else 120
         st.markdown(f"""
         <div class="stats-card fade-in">
@@ -317,7 +322,7 @@ def render_stats():
         </div>
         """, unsafe_allow_html=True)
     
-    with col3:
+    with cols[3]:
         st.markdown("""
         <div class="stats-card fade-in">
             <div class="stats-number">22</div>
@@ -325,7 +330,7 @@ def render_stats():
         </div>
         """, unsafe_allow_html=True)
     
-    with col4:
+    with cols[4]:
         ai_status = "Active" if GEMINI_AVAILABLE else "Document Mode"
         st.markdown(f"""
         <div class="stats-card fade-in">
@@ -336,8 +341,12 @@ def render_stats():
 
 # Main App
 def main():
-    render_hero()
-    render_stats()
+    # Main Tabs at the top
+    tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "📊 Dashboard", "🗺️ Region Explorer", "📑 Documents"])
+    
+    st.markdown("<br>", unsafe_allow_html=True) # Spacing
+    render_stats() # Stats cards above hero
+    render_hero()  # Hero title below stats
     
     # Sidebar
     with st.sidebar:
@@ -374,9 +383,6 @@ def main():
                     st.session_state.active_pipeline = create_temp_pipeline_from_file(uploaded_file)
                     st.session_state.messages = []
                     st.success(f"Loaded {uploaded_file.name}")
-    
-    # Main Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "📊 Dashboard", "🗺️ Region Explorer", "📑 Documents"])
     
     with tab1:
         render_chat_tab()
