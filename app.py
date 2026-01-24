@@ -53,27 +53,88 @@ st.markdown("""
     /* Hero Section - Compact & Left Aligned */
     .hero-section {
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        padding: 10px 20px;
-        border-radius: 12px;
-        margin-bottom: 20px;
+        padding: 15px 25px;
+        border-radius: 15px;
         box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
         animation: fadeIn 0.8s ease-in;
-        max-width: 350px;
         text-align: left;
     }
     
     .hero-title {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
         font-weight: 700;
         color: white;
-        margin-bottom: 2px;
+        margin-bottom: 3px;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
     }
     
     .hero-subtitle {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: #e0e7ff;
         font-weight: 300;
+    }
+    
+    /* Navigation Cards */
+    .nav-cards-container {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+    
+    .nav-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 15px 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        min-width: 140px;
+    }
+    
+    .nav-card-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #cbd5e1;
+        margin-bottom: 3px;
+    }
+    
+    .nav-card-icon {
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+    }
+    
+    .nav-card.active {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-color: #3b82f6;
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    }
+    
+    .nav-card.active .nav-card-title {
+        color: white;
+    }
+    
+    /* Unique hover effects for each card */
+    .nav-card-chat:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 12px 35px rgba(59, 130, 246, 0.3);
+        border-color: rgba(59, 130, 246, 0.5);
+    }
+    
+    .nav-card-dashboard:hover {
+        transform: rotate(2deg) scale(1.05);
+        box-shadow: 0 12px 35px rgba(16, 185, 129, 0.3);
+        border-color: rgba(16, 185, 129, 0.5);
+        background: rgba(16, 185, 129, 0.1);
+    }
+    
+    .nav-card-explorer:hover {
+        transform: translateX(5px) scale(1.05);
+        box-shadow: 0 12px 35px rgba(245, 158, 11, 0.3);
+        border-color: rgba(245, 158, 11, 0.5);
+        background: rgba(245, 158, 11, 0.1);
     }
     
     /* Stats Cards */
@@ -109,30 +170,6 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
-    /* Tab Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 12px;
-        background-color: rgba(255, 255, 255, 0.05);
-        border-radius: 15px;
-        padding: 4px;
-        justify-content: center; /* Center tabs */
-        max-width: fit-content;
-        margin: 0 auto;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 10px;
-        color: #94a3b8;
-        font-weight: 600;
-        padding: 6px 16px; /* Compact padding */
-        transition: all 0.3s ease;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-    }
-    
     /* Chat Messages */
     .stChatMessage {
         background: rgba(255, 255, 255, 0.05);
@@ -140,6 +177,20 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 1rem;
         margin-bottom: 1rem;
+    }
+    
+    /* File Uploader Styling */
+    [data-testid="stFileUploader"] {
+        background: rgba(59, 130, 246, 0.05);
+        border: 2px dashed rgba(59, 130, 246, 0.3);
+        border-radius: 10px;
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    [data-testid="stFileUploader"]:hover {
+        border-color: rgba(59, 130, 246, 0.6);
+        background: rgba(59, 130, 246, 0.1);
     }
     
     /* Buttons */
@@ -295,9 +346,36 @@ def render_hero():
     st.markdown("""
     <div class="hero-section fade-in">
         <div class="hero-title">🌦️ MeghSutra AI</div>
-        <div class="hero-subtitle">Advanced Climate Intelligence for Indian Agriculture</div>
+        <div class="hero-subtitle">Climate Intelligence Platform</div>
     </div>
     """, unsafe_allow_html=True)
+
+# Navigation Cards
+def render_navigation():
+    # Initialize active page in session state
+    if 'active_page' not in st.session_state:
+        st.session_state.active_page = 'Chat'
+    
+    # Create navigation HTML
+    nav_items = [
+        {'name': 'Chat', 'icon': '💬', 'class': 'nav-card-chat'},
+        {'name': 'Dashboard', 'icon': '📊', 'class': 'nav-card-dashboard'},
+        {'name': 'Region Explorer', 'icon': '🗺️', 'class': 'nav-card-explorer'}
+    ]
+    
+    cols = st.columns(len(nav_items))
+    
+    for idx, item in enumerate(nav_items):
+        with cols[idx]:
+            active_class = 'active' if st.session_state.active_page == item['name'] else ''
+            if st.button(
+                f"{item['icon']}\n{item['name']}",
+                key=f"nav_{item['name']}",
+                use_container_width=True,
+                type="primary" if active_class else "secondary"
+            ):
+                st.session_state.active_page = item['name']
+                st.rerun()
 
 # Stats Cards
 def render_stats():
@@ -333,11 +411,13 @@ def main():
         st.session_state.active_pipeline = load_main_pipeline()
     if 'messages' not in st.session_state:
         st.session_state.messages = []
+    if 'active_page' not in st.session_state:
+        st.session_state.active_page = 'Chat'
 
-    # Sidebar First
+    # Sidebar
     with st.sidebar:
         st.markdown("### 🌦️ MeghSutra AI")
-        render_stats() # Stats cards now in sidebar
+        render_stats()
         
         st.markdown("---")
         st.markdown("### 🎛️ Control Panel")
@@ -364,38 +444,48 @@ def main():
             st.session_state.messages = []
             st.success("Switched to main climate database.")
     
-    # Global Header at top left/center
-    render_hero()
+    # Top Header Row: Hero (left) + Navigation Cards (right)
+    header_col1, header_col2 = st.columns([1, 2])
     
-    # Main Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "📊 Dashboard", "🗺️ Region Explorer", "📑 Documents"])
+    with header_col1:
+        render_hero()
     
-    with tab1:
+    with header_col2:
+        render_navigation()
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Render content based on active page
+    if st.session_state.active_page == 'Chat':
         render_chat_tab()
-    
-    with tab2:
+    elif st.session_state.active_page == 'Dashboard':
         render_dashboard_tab()
-    
-    with tab3:
+    elif st.session_state.active_page == 'Region Explorer':
         render_region_explorer_tab()
-    
-    with tab4:
-        render_documents_tab()
 
 def render_chat_tab():
-    st.markdown("### 💬 Chat & Analysis")
+    st.markdown("### 💬 Chat & Document Analysis")
     
-    # PDF Uploader moved here from sidebar
-    with st.expander("📄 Analyze Your Own Document", expanded=False):
-        uploaded_file = st.file_uploader("Upload PDF for instant climate analysis", type="pdf")
+    # Integrated PDF Uploader with drag-and-drop
+    col1, col2 = st.columns([2, 1])
+    
+    with col2:
+        st.markdown("##### 📄 Upload Document")
+        uploaded_file = st.file_uploader(
+            "Drag & drop your PDF here",
+            type="pdf",
+            help="Upload a climate-related PDF for instant analysis"
+        )
         if uploaded_file:
-            if st.button(f"Process '{uploaded_file.name}'", use_container_width=True):
+            if st.button("📊 Analyze Document", use_container_width=True, type="primary"):
                 with st.spinner("Processing document..."):
                     st.session_state.active_pipeline = create_temp_pipeline_from_file(uploaded_file)
                     st.session_state.messages = []
-                    st.success(f"Successfully loaded {uploaded_file.name}!")
+                    st.success(f"✅ Loaded: {uploaded_file.name}")
+                    st.info("You can now ask questions about this document!")
     
-    st.markdown("---")
+    with col1:
+        st.markdown("##### 💭 Ask Questions")
     
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
