@@ -45,9 +45,26 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
     
-    /* Main Background */
+    /* Main Background - No black backgrounds */
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    }
+    
+    /* Remove all black backgrounds */
+    .main .block-container {
+        background: transparent !important;
+    }
+    
+    [data-testid="stAppViewContainer"] {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    }
+    
+    [data-testid="stHeader"] {
+        background: transparent !important;
+    }
+    
+    [data-testid="stToolbar"] {
+        background: transparent !important;
     }
     
     /* Hero Section - Compact & Left Aligned */
@@ -74,67 +91,57 @@ st.markdown("""
         font-weight: 300;
     }
     
-    /* Navigation Cards */
+    /* Navigation Cards - Smaller & Right Aligned */
     .nav-cards-container {
         display: flex;
-        gap: 15px;
+        gap: 10px;
         justify-content: flex-end;
         flex-wrap: wrap;
     }
     
-    .nav-card {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        padding: 15px 25px;
+    /* Compact Navigation Buttons */
+    .stButton > button[kind="secondary"] {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #cbd5e1 !important;
+        padding: 8px 16px !important;
+        font-size: 0.85rem !important;
+        min-width: 100px !important;
+    }
+    
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+        border: 1px solid #3b82f6 !important;
+        color: white !important;
+        padding: 8px 16px !important;
+        font-size: 0.85rem !important;
+        min-width: 100px !important;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3) !important;
+    }
+    
+    /* Chat Panel - Persistent on left */
+    .chat-panel {
+        background: rgba(255, 255, 255, 0.02);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+        height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+    
+    /* File Upload Button Compact */
+    .upload-btn {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 8px;
+        padding: 8px;
         cursor: pointer;
         transition: all 0.3s ease;
-        text-align: center;
-        min-width: 140px;
     }
     
-    .nav-card-title {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #cbd5e1;
-        margin-bottom: 3px;
-    }
-    
-    .nav-card-icon {
-        font-size: 1.5rem;
-        margin-bottom: 5px;
-    }
-    
-    .nav-card.active {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        border-color: #3b82f6;
-        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-    }
-    
-    .nav-card.active .nav-card-title {
-        color: white;
-    }
-    
-    /* Unique hover effects for each card */
-    .nav-card-chat:hover {
-        transform: translateY(-5px) scale(1.05);
-        box-shadow: 0 12px 35px rgba(59, 130, 246, 0.3);
+    .upload-btn:hover {
+        background: rgba(59, 130, 246, 0.2);
         border-color: rgba(59, 130, 246, 0.5);
-    }
-    
-    .nav-card-dashboard:hover {
-        transform: rotate(2deg) scale(1.05);
-        box-shadow: 0 12px 35px rgba(16, 185, 129, 0.3);
-        border-color: rgba(16, 185, 129, 0.5);
-        background: rgba(16, 185, 129, 0.1);
-    }
-    
-    .nav-card-explorer:hover {
-        transform: translateX(5px) scale(1.05);
-        box-shadow: 0 12px 35px rgba(245, 158, 11, 0.3);
-        border-color: rgba(245, 158, 11, 0.5);
-        background: rgba(245, 158, 11, 0.1);
     }
     
     /* Stats Cards */
@@ -179,18 +186,23 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     
-    /* File Uploader Styling */
+    /* Compact File Uploader - Integrated with Chat */
     [data-testid="stFileUploader"] {
-        background: rgba(59, 130, 246, 0.05);
-        border: 2px dashed rgba(59, 130, 246, 0.3);
-        border-radius: 10px;
-        padding: 20px;
-        transition: all 0.3s ease;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
     }
     
-    [data-testid="stFileUploader"]:hover {
-        border-color: rgba(59, 130, 246, 0.6);
-        background: rgba(59, 130, 246, 0.1);
+    [data-testid="stFileUploader"] > div {
+        border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        border-radius: 8px !important;
+        padding: 8px !important;
+        background: rgba(59, 130, 246, 0.05) !important;
+    }
+    
+    [data-testid="stFileUploader"] > div:hover {
+        border-color: rgba(59, 130, 246, 0.6) !important;
+        background: rgba(59, 130, 246, 0.1) !important;
     }
     
     /* Buttons */
@@ -350,29 +362,28 @@ def render_hero():
     </div>
     """, unsafe_allow_html=True)
 
-# Navigation Cards
+# Navigation Cards - Smaller & Right Aligned
 def render_navigation():
-    # Initialize active page in session state
+    # Initialize active page
     if 'active_page' not in st.session_state:
         st.session_state.active_page = 'Chat'
     
-    # Create navigation HTML
     nav_items = [
-        {'name': 'Chat', 'icon': '💬', 'class': 'nav-card-chat'},
-        {'name': 'Dashboard', 'icon': '📊', 'class': 'nav-card-dashboard'},
-        {'name': 'Region Explorer', 'icon': '🗺️', 'class': 'nav-card-explorer'}
+        {'name': 'Chat', 'icon': '💬'},
+        {'name': 'Dashboard', 'icon': '📊'},
+        {'name': 'Explorer', 'icon': '🗺️'}
     ]
     
-    cols = st.columns(len(nav_items))
+    cols = st.columns([1, 1, 1])
     
     for idx, item in enumerate(nav_items):
         with cols[idx]:
-            active_class = 'active' if st.session_state.active_page == item['name'] else ''
+            is_active = st.session_state.active_page == item['name']
             if st.button(
-                f"{item['icon']}\n{item['name']}",
+                f"{item['icon']} {item['name']}",
                 key=f"nav_{item['name']}",
                 use_container_width=True,
-                type="primary" if active_class else "secondary"
+                type="primary" if is_active else "secondary"
             ):
                 st.session_state.active_page = item['name']
                 st.rerun()
@@ -445,7 +456,7 @@ def main():
             st.success("Switched to main climate database.")
     
     # Top Header Row: Hero (left) + Navigation Cards (right)
-    header_col1, header_col2 = st.columns([1, 2])
+    header_col1, header_col2 = st.columns([1, 1])
     
     with header_col1:
         render_hero()
@@ -453,65 +464,90 @@ def main():
     with header_col2:
         render_navigation()
     
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("---")
     
-    # Render content based on active page
+    # Split-screen layout: Chat always visible when viewing Dashboard/Explorer
     if st.session_state.active_page == 'Chat':
+        # Full-width chat
         render_chat_tab()
-    elif st.session_state.active_page == 'Dashboard':
-        render_dashboard_tab()
-    elif st.session_state.active_page == 'Region Explorer':
-        render_region_explorer_tab()
+    else:
+        # Split view: Chat on left, Dashboard/Explorer on right
+        chat_col, content_col = st.columns([1, 2])
+        
+        with chat_col:
+            st.markdown("#### 💬 Chat Panel")
+            render_chat_panel()
+        
+        with content_col:
+            if st.session_state.active_page == 'Dashboard':
+                render_dashboard_tab()
+            elif st.session_state.active_page == 'Explorer':
+                render_region_explorer_tab()
 
+# Chat Panel - Compact version for split view
+def render_chat_panel():
+    # Compact chat display
+    for message in st.session_state.messages[-5:]:  # Show last 5 messages
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"][:200] + "..." if len(message["content"]) > 200 else message["content"])
+    
+    # Chat input at bottom
+    if prompt := st.chat_input("Ask a question...", key="chat_panel_input"):
+        handle_chat_input(prompt)
+
+# Full Chat Tab
 def render_chat_tab():
-    st.markdown("### 💬 Chat & Document Analysis")
+    st.markdown("### 💬 Climate Intelligence Chat")
     
-    # Integrated PDF Uploader with drag-and-drop
-    col1, col2 = st.columns([2, 1])
-    
-    with col2:
-        st.markdown("##### 📄 Upload Document")
+    # File upload integrated with chat input - at the top in a compact form
+    with st.expander("📎 Upload Document (Optional)", expanded=False):
         uploaded_file = st.file_uploader(
-            "Drag & drop your PDF here",
+            "Drop your PDF here or click to browse",
             type="pdf",
-            help="Upload a climate-related PDF for instant analysis"
+            help="Upload climate documents for analysis",
+            key="chat_file_upload"
         )
         if uploaded_file:
-            if st.button("📊 Analyze Document", use_container_width=True, type="primary"):
-                with st.spinner("Processing document..."):
+            if st.button("✅ Process Document", type="primary"):
+                with st.spinner("Processing..."):
                     st.session_state.active_pipeline = create_temp_pipeline_from_file(uploaded_file)
                     st.session_state.messages = []
-                    st.success(f"✅ Loaded: {uploaded_file.name}")
-                    st.info("You can now ask questions about this document!")
+                    st.success(f"Loaded: {uploaded_file.name}")
+                    st.rerun()
     
-    with col1:
-        st.markdown("##### 💭 Ask Questions")
-    
+    # Display all messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    if prompt := st.chat_input("Ask a question about climate data..."):
-        if not st.session_state.active_pipeline:
-            st.warning("Please load a knowledge base first.")
-        else:
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            
-            with st.chat_message("assistant"):
-                with st.spinner("Thinking..."):
-                    pipeline = st.session_state.active_pipeline
-                    context = pipeline.retrieve(prompt)
-                    if not context:
-                        response_text = "I couldn't find relevant information in the document to answer that."
-                    else:
-                        answer = pipeline.generate(prompt, context)
-                        sources = set(chunk['source_file'] for chunk in context if 'source_file' in chunk)
-                        if sources:
-                            response_text = f"{answer}\n\n**Sources:**\n- " + "\n- ".join(sources)
-                        else:
-                            response_text = answer
+    # Chat input
+    if prompt := st.chat_input("Ask about climate, weather, or upload a document above...", key="main_chat_input"):
+        handle_chat_input(prompt)
+
+# Handle chat input logic
+def handle_chat_input(prompt):
+    if not st.session_state.active_pipeline:
+        st.warning("Please load a knowledge base first.")
+        return
+    
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking..."):
+            pipeline = st.session_state.active_pipeline
+            context = pipeline.retrieve(prompt)
+            if not context:
+                response_text = "I couldn't find relevant information to answer that."
+            else:
+                answer = pipeline.generate(prompt, context)
+                sources = set(chunk['source_file'] for chunk in context if 'source_file' in chunk)
+                if sources:
+                    response_text = f"{answer}\n\n**Sources:**\n- " + "\n- ".join(sources)
+                else:
+                    response_text = answer
                     
                     st.markdown(response_text)
             
