@@ -50,27 +50,28 @@ st.markdown("""
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     }
     
-    /* Hero Section */
+    /* Hero Section - Compact & Left Aligned */
     .hero-section {
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        padding: 2rem 2rem;
-        border-radius: 20px;
-        margin-bottom: 2rem;
-        box-shadow: 0 20px 60px rgba(59, 130, 246, 0.3);
+        padding: 10px 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
         animation: fadeIn 0.8s ease-in;
-        text-align: center; /* Center hero text */
+        max-width: 350px;
+        text-align: left;
     }
     
     .hero-title {
-        font-size: 2.8rem; /* Slightly smaller for balance */
+        font-size: 1.8rem;
         font-weight: 700;
         color: white;
-        margin-bottom: 0.5rem;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        margin-bottom: 2px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
     }
     
     .hero-subtitle {
-        font-size: 1.3rem;
+        font-size: 0.9rem;
         color: #e0e7ff;
         font-weight: 300;
     }
@@ -302,54 +303,43 @@ def render_hero():
 def render_stats():
     df = load_rainfall_data()
     
-    # Using 6 columns to center the 4 middle cards
-    cols = st.columns([1, 2, 2, 2, 2, 1])
+    # Rendered in sidebar for better focus
+    st.markdown("### 📈 Project Metrics")
     
-    with cols[1]:
-        st.markdown("""
-        <div class="stats-card fade-in">
-            <div class="stats-number">36</div>
-            <div class="stats-label">Regions Covered</div>
-        </div>
-        """, unsafe_allow_html=True)
+    years = df['Year'].nunique() if df is not None else 120
+    ai_status = "Active" if GEMINI_AVAILABLE else "Docs Mode"
+    ai_icon = "✅" if GEMINI_AVAILABLE else "📖"
     
-    with cols[2]:
-        years = df['Year'].nunique() if df is not None else 120
+    stats = [
+        ("36", "Regions Covered"),
+        (f"{years}+", "Years of Data"),
+        ("22", "Languages"),
+        (ai_icon, f"AI {ai_status}")
+    ]
+    
+    # Display stats in 2x2 grid in sidebar or vertical stack
+    for val, label in stats:
         st.markdown(f"""
-        <div class="stats-card fade-in">
-            <div class="stats-number">{years}+</div>
-            <div class="stats-label">Years of Data</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with cols[3]:
-        st.markdown("""
-        <div class="stats-card fade-in">
-            <div class="stats-number">22</div>
-            <div class="stats-label">Languages</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with cols[4]:
-        ai_status = "Active" if GEMINI_AVAILABLE else "Document Mode"
-        st.markdown(f"""
-        <div class="stats-card fade-in">
-            <div class="stats-number">{"✓" if GEMINI_AVAILABLE else "○"}</div>
-            <div class="stats-label">AI {ai_status}</div>
+        <div class="stats-card fade-in" style="margin-bottom: 10px; padding: 12px;">
+            <div class="stats-number" style="font-size: 1.6rem; margin-bottom: 0;">{val}</div>
+            <div class="stats-label" style="font-size: 0.75rem;">{label}</div>
         </div>
         """, unsafe_allow_html=True)
 
 # Main App
 def main():
-    # Main Tabs at the top
-    tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "📊 Dashboard", "🗺️ Region Explorer", "📑 Documents"])
-    
-    st.markdown("<br>", unsafe_allow_html=True) # Spacing
-    render_stats() # Stats cards above hero
-    render_hero()  # Hero title below stats
-    
-    # Sidebar
+    # Initialize Session State
+    if 'active_pipeline' not in st.session_state:
+        st.session_state.active_pipeline = load_main_pipeline()
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
+
+    # Sidebar First
     with st.sidebar:
+        st.markdown("### 🌦️ MeghSutra AI")
+        render_stats() # Stats cards now in sidebar
+        
+        st.markdown("---")
         st.markdown("### 🎛️ Control Panel")
         
         if GEMINI_AVAILABLE:
@@ -373,16 +363,12 @@ def main():
             st.session_state.active_pipeline = load_main_pipeline()
             st.session_state.messages = []
             st.success("Switched to main climate database.")
-        
-        st.markdown("---")
-        
-        uploaded_file = st.file_uploader("📄 Or, analyze your own PDF", type="pdf")
-        if uploaded_file:
-            if st.button(f"Process '{uploaded_file.name}'", use_container_width=True):
-                with st.spinner("Processing document..."):
-                    st.session_state.active_pipeline = create_temp_pipeline_from_file(uploaded_file)
-                    st.session_state.messages = []
-                    st.success(f"Loaded {uploaded_file.name}")
+    
+    # Global Header at top left/center
+    render_hero()
+    
+    # Main Tabs
+    tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "📊 Dashboard", "🗺️ Region Explorer", "📑 Documents"])
     
     with tab1:
         render_chat_tab()
@@ -397,12 +383,19 @@ def main():
         render_documents_tab()
 
 def render_chat_tab():
-    st.markdown("### 💬 Ask MeghSutra Anything")
+    st.markdown("### 💬 Chat & Analysis")
     
-    if 'active_pipeline' not in st.session_state:
-        st.session_state.active_pipeline = load_main_pipeline()
-    if 'messages' not in st.session_state:
-        st.session_state.messages = []
+    # PDF Uploader moved here from sidebar
+    with st.expander("📄 Analyze Your Own Document", expanded=False):
+        uploaded_file = st.file_uploader("Upload PDF for instant climate analysis", type="pdf")
+        if uploaded_file:
+            if st.button(f"Process '{uploaded_file.name}'", use_container_width=True):
+                with st.spinner("Processing document..."):
+                    st.session_state.active_pipeline = create_temp_pipeline_from_file(uploaded_file)
+                    st.session_state.messages = []
+                    st.success(f"Successfully loaded {uploaded_file.name}!")
+    
+    st.markdown("---")
     
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
