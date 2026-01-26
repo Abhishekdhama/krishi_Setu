@@ -14,6 +14,7 @@ from io import BytesIO
 from dotenv import load_dotenv
 import requests
 import google.generativeai as genai
+from deep_translator import GoogleTranslator
 
 # Load environment variables
 load_dotenv()
@@ -25,6 +26,52 @@ if GEMINI_API_KEY and GEMINI_API_KEY != 'your_gemini_api_key_here':
     GEMINI_AVAILABLE = True
 else:
     GEMINI_AVAILABLE = False
+
+# Supported Languages (22 Indian Official Languages)
+LANGUAGES = {
+    'en': '🇬🇧 English',
+    'hi': '🇮🇳 हिंदी (Hindi)',
+    'bn': '🇮🇳 বাংলা (Bengali)',
+    'te': '🇮🇳 తెలుగు (Telugu)',
+    'mr': '🇮🇳 मराठी (Marathi)',
+    'ta': '🇮🇳 தமிழ் (Tamil)',
+    'ur': '🇮🇳 اردو (Urdu)',
+    'gu': '🇮🇳 ગુજરાતી (Gujarati)',
+    'kn': '🇮🇳 ಕನ್ನಡ (Kannada)',
+    'or': '🇮🇳 ଓଡ଼ିଆ (Odia)',
+    'ml': '🇮🇳 മലയാളം (Malayalam)',
+    'pa': '🇮🇳 ਪੰਜਾਬੀ (Punjabi)',
+    'as': '🇮🇳 অসমীয়া (Assamese)',
+    'sa': '🇮🇳 संस्कृत (Sanskrit)',
+    'ne': '🇮🇳 नेपाली (Nepali)',
+    'sd': '🇮🇳 سنڌي (Sindhi)'
+}
+
+# Translation Helper Functions
+def translate_text(text, source_lang='auto', target_lang='en'):
+    """Translate text using deep-translator"""
+    try:
+        if source_lang == target_lang or (target_lang == 'en' and source_lang == 'auto'):
+            return text
+        
+        translator = GoogleTranslator(source=source_lang, target=target_lang)
+        translated = translator.translate(text)
+        return translated
+    except Exception as e:
+        st.warning(f"⚠️ Translation error: {str(e)}. Showing original text.")
+        return text
+
+def translate_to_english(text, source_lang):
+    """Translate user input to English for RAG processing"""
+    if source_lang == 'en':
+        return text
+    return translate_text(text, source_lang=source_lang, target_lang='en')
+
+def translate_from_english(text, target_lang):
+    """Translate AI response from English to user's language"""
+    if target_lang == 'en':
+        return text
+    return translate_text(text, source_lang='en', target_lang=target_lang)
 
 # Page configuration
 st.set_page_config(
@@ -394,6 +441,26 @@ def main():
         st.markdown("### 🌦️ MeghSutra AI")
         st.markdown("---")
         
+        # Language Selector
+        st.markdown("#### 🌍 Language / भाषा")
+        if 'language' not in st.session_state:
+            st.session_state.language = 'en'
+        
+        selected_language = st.selectbox(
+            "Select your language",
+            options=list(LANGUAGES.keys()),
+            format_func=lambda x: LANGUAGES[x],
+            key='language_selector',
+            index=list(LANGUAGES.keys()).index(st.session_state.language)
+        )
+        
+        if selected_language != st.session_state.language:
+            st.session_state.language = selected_language
+            st.success(f"Language changed to {LANGUAGES[selected_language]}")
+            st.rerun()
+        
+        st.markdown("---")
+        
         # Navigation Cards in Sidebar
         st.markdown("#### Navigation")
         render_navigation()
@@ -465,6 +532,10 @@ def render_chat_panel():
         if not st.session_state.active_pipeline:
             st.warning("Please load a knowledge base first.")
         else:
+            # Get user's selected language
+            user_lang = st.session_state.get('language', 'en')
+            
+            # Store original prompt in user's language
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
@@ -472,16 +543,30 @@ def render_chat_panel():
             with st.chat_message("assistant"):
                 with st.spinner("Thinking..."):
                     pipeline = st.session_state.active_pipeline
-                    context = pipeline.retrieve(prompt)
-                    if not context:
-                        response_text = "I couldn't find relevant information in the document to answer that."
+                    
+                    # Translate query to English for RAG processing
+                    if user_lang != 'en':
+                        english_query = translate_to_english(prompt, user_lang)
                     else:
-                        answer = pipeline.generate(prompt, context)
+                        english_query = prompt
+                    
+                    # Process with RAG pipeline in English
+                    context = pipeline.retrieve(english_query)
+                    if not context:
+                        response_english = "I couldn't find relevant information in the document to answer that."
+                    else:
+                        answer = pipeline.generate(english_query, context)
                         sources = set(chunk['source_file'] for chunk in context if 'source_file' in chunk)
                         if sources:
-                            response_text = f"{answer}\n\n**Sources:**\n- " + "\n- ".join(sources)
+                            response_english = f"{answer}\n\n**Sources:**\n- " + "\n- ".join(sources)
                         else:
-                            response_text = answer
+                            response_english = answer
+                    
+                    # Translate response back to user's language
+                    if user_lang != 'en':
+                        response_text = translate_from_english(response_english, user_lang)
+                    else:
+                        response_text = response_english
                     
                     st.markdown(response_text)
             
