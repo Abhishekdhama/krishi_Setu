@@ -326,26 +326,48 @@ class RAGPipeline:
         # Fixed: chunks use 'content' key, not 'text'
         context_text = "\n\n".join([chunk.get('content', chunk.get('text', '')) for chunk in context])
         
-        # Temporarily disabled Gemini due to model version issues
-        # Will show clean document excerpts instead
-        if False and GEMINI_AVAILABLE:  # Disabled for now
+        # Use Gemini REST API directly to avoid library issues
+        if GEMINI_AVAILABLE:
             try:
-                # Use gemini-pro for v1 API (gemini-1.5-flash not available in v1beta)
-                model = genai.GenerativeModel('gemini-pro')
-                prompt = f"""Based on the following context, answer the question concisely and accurately.
+                import requests
+                import json
+                
+                # Use Gemini 1.5 Flash via REST API
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+                
+               headers = {'Content-Type': 'application/json'}
+                
+                payload = {
+                    "contents": [{
+                        "parts": [{
+                            "text": f"""Based on the following context from climate documents, answer the question concisely and accurately. Ignore any garbled or OCR errors in the context and focus on the readable information.
 
 Context:
 {context_text}
 
 Question: {query}
 
-Answer:"""
-                response = model.generate_content(prompt)
-                return response.text
+Provide a clear, concise answer based only on the information in the context:"""
+                        }]
+                    }]
+                }
+                
+                response = requests.post(url, headers=headers, json=payload, timeout=30)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if 'candidates' in result and len(result['candidates']) > 0:
+                        answer = result['candidates'][0]['content']['parts'][0]['text']
+                        return answer
+                    else:
+                        st.warning("⚠️ Gemini returned no candidates. Showing excerpts.")
+                else:
+                    st.warning(f"⚠️ Gemini API error {response.status_code}. Showing excerpts.")
+                    
             except Exception as e:
-                st.warning(f"Gemini API error: {str(e)}. Showing document excerpts instead.")
+                st.warning(f"⚠️ Error calling Gemini: {str(e)}. Showing excerpts.")
         
-        # Show clean document excerpts (first 1000 chars from each chunk)
+        # Show clean document excerpts (first 300 chars from each chunk)
         clean_excerpts = []
         for i, chunk in enumerate(context[:3], 1):  # Show top 3 results
             content = chunk.get('content', chunk.get('text', ''))
