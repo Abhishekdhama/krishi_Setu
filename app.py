@@ -328,8 +328,8 @@ class RAGPipeline:
         
         if GEMINI_AVAILABLE:
             try:
-                # Fixed: Use valid model name
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # Use gemini-pro for v1 API (gemini-1.5-flash not available in v1beta)
+                model = genai.GenerativeModel('gemini-pro')
                 prompt = f"""Based on the following context, answer the question concisely and accurately.
 
 Context:
