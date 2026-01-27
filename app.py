@@ -346,7 +346,6 @@ Answer:"""
         return f"**Relevant Information:**\n\n{context_text[:500]}..."
 
 # Helper Functions
-@st.cache_resource
 def load_main_pipeline():
     return RAGPipeline()
 
