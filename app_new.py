@@ -14,7 +14,6 @@ from io import BytesIO
 from dotenv import load_dotenv
 import requests
 import google.generativeai as genai
-from deep_translator import GoogleTranslator
 
 # Load environment variables
 load_dotenv()
@@ -26,52 +25,6 @@ if GEMINI_API_KEY and GEMINI_API_KEY != 'your_gemini_api_key_here':
     GEMINI_AVAILABLE = True
 else:
     GEMINI_AVAILABLE = False
-
-# Supported Languages (22 Indian Official Languages)
-LANGUAGES = {
-    'en': '🇬🇧 English',
-    'hi': '🇮🇳 हिंदी (Hindi)',
-    'bn': '🇮🇳 বাংলা (Bengali)',
-    'te': '🇮🇳 తెలుగు (Telugu)',
-    'mr': '🇮🇳 मराठी (Marathi)',
-    'ta': '🇮🇳 தமிழ் (Tamil)',
-    'ur': '🇮🇳 اردو (Urdu)',
-    'gu': '🇮🇳 ગુજરાતી (Gujarati)',
-    'kn': '🇮🇳 ಕನ್ನಡ (Kannada)',
-    'or': '🇮🇳 ଓଡ଼ିଆ (Odia)',
-    'ml': '🇮🇳 മലയാളം (Malayalam)',
-    'pa': '🇮🇳 ਪੰਜਾਬੀ (Punjabi)',
-    'as': '🇮🇳 অসমীয়া (Assamese)',
-    'sa': '🇮🇳 संस्कृत (Sanskrit)',
-    'ne': '🇮🇳 नेपाली (Nepali)',
-    'sd': '🇮🇳 سنڌي (Sindhi)'
-}
-
-# Translation Helper Functions
-def translate_text(text, source_lang='auto', target_lang='en'):
-    """Translate text using deep-translator"""
-    try:
-        if source_lang == target_lang or (target_lang == 'en' and source_lang == 'auto'):
-            return text
-        
-        translator = GoogleTranslator(source=source_lang, target=target_lang)
-        translated = translator.translate(text)
-        return translated
-    except Exception as e:
-        st.warning(f"⚠️ Translation error: {str(e)}. Showing original text.")
-        return text
-
-def translate_to_english(text, source_lang):
-    """Translate user input to English for RAG processing"""
-    if source_lang == 'en':
-        return text
-    return translate_text(text, source_lang=source_lang, target_lang='en')
-
-def translate_from_english(text, target_lang):
-    """Translate AI response from English to user's language"""
-    if target_lang == 'en':
-        return text
-    return translate_text(text, source_lang='en', target_lang=target_lang)
 
 # Page configuration
 st.set_page_config(
@@ -92,84 +45,33 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
     
-    /* Main Background - Force gradient everywhere */
+    /* Main Background */
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     }
     
-    /* Remove ALL black backgrounds */
-    .main .block-container {
-        background: transparent !important;
-        padding-bottom: 0 !important;
-    }
-    
-    .main {
-        background: transparent !important;
-    }
-    
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
-    }
-    
-    /* Remove bottom padding/margin that creates black space */
-    .block-container {
-        padding-bottom: 1rem !important;
-        margin-bottom: 0 !important;
-    }
-    
-    /* Hide Streamlit menu and footer */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Hero Section - Compact & Left Aligned */
+    /* Hero Section */
     .hero-section {
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        padding: 15px 25px;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+        padding: 3rem 2rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 60px rgba(59, 130, 246, 0.3);
         animation: fadeIn 0.8s ease-in;
-        text-align: left;
     }
     
     .hero-title {
-        font-size: 1.6rem;
+        font-size: 3.5rem;
         font-weight: 700;
         color: white;
-        margin-bottom: 3px;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        margin-bottom: 0.5rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
     }
     
     .hero-subtitle {
-        font-size: 0.85rem;
+        font-size: 1.3rem;
         color: #e0e7ff;
         font-weight: 300;
-    }
-    
-    /* Navigation Cards - Compact & Right-aligned */
-    .nav-card {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        padding: 8px 16px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-align: center;
-        min-width: 100px;
-        font-size: 0.85rem;
-    }
-    
-    .nav-card.active {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        border-color: #3b82f6;
-        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-    }
-    
-    /* Compact hover effects */
-    .stButton > button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
     }
     
     /* Stats Cards */
@@ -205,6 +107,27 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
+    /* Tab Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 10px;
+        color: #94a3b8;
+        font-weight: 600;
+        padding: 12px 24px;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+    }
+    
     /* Chat Messages */
     .stChatMessage {
         background: rgba(255, 255, 255, 0.05);
@@ -212,13 +135,6 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 1rem;
         margin-bottom: 1rem;
-    }
-    
-    /* Chat Input Area Styling */
-    .stChatInputContainer {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 15px;
-        padding: 10px;
     }
     
     /* Buttons */
@@ -289,22 +205,13 @@ class RAGPipeline:
         self.load_vector_store()
     
     def load_vector_store(self):
-        # Updated to match actual vector store file names
-        index_path = os.path.join(self.vector_store_path, "knowledge.index")
-        chunks_path = os.path.join(self.vector_store_path, "metadata.pkl")
+        index_path = os.path.join(self.vector_store_path, "faiss_index.bin")
+        chunks_path = os.path.join(self.vector_store_path, "chunks.pkl")
         
         if os.path.exists(index_path) and os.path.exists(chunks_path):
-            try:
-                self.index = faiss.read_index(index_path)
-                with open(chunks_path, 'rb') as f:
-                    self.chunks = pickle.load(f)
-                print(f"✅ Loaded vector store: {len(self.chunks)} chunks")
-            except Exception as e:
-                print(f"❌ Error loading vector store: {e}")
-                self.index = None
-                self.chunks = None
-        else:
-            print(f"⚠️ Vector store not found at {self.vector_store_path}")
+            self.index = faiss.read_index(index_path)
+            with open(chunks_path, 'rb') as f:
+                self.chunks = pickle.load(f)
     
     def retrieve(self, query, top_k=3):
         if self.index is None or self.chunks is None:
@@ -323,8 +230,7 @@ class RAGPipeline:
         if not context:
             return "No relevant information found."
         
-        # Fixed: chunks use 'content' key, not 'text'
-        context_text = "\n\n".join([chunk.get('content', chunk.get('text', '')) for chunk in context])
+        context_text = "\n\n".join([chunk['text'] for chunk in context])
         
         if GEMINI_AVAILABLE:
             try:
@@ -384,103 +290,57 @@ def render_hero():
     st.markdown("""
     <div class="hero-section fade-in">
         <div class="hero-title">🌦️ MeghSutra AI</div>
-        <div class="hero-subtitle">Climate Intelligence Platform</div>
+        <div class="hero-subtitle">Advanced Climate Intelligence for Indian Agriculture</div>
     </div>
     """, unsafe_allow_html=True)
-
-# Navigation Cards - Compact (for Sidebar)
-def render_navigation():
-    if 'active_page' not in st.session_state:
-        st.session_state.active_page = 'Chat'
-    
-    nav_items = [
-        {'name': 'Chat', 'icon': '💬'},
-        {'name': 'Dashboard', 'icon': '📊'},
-        {'name': 'Explorer', 'icon': '🗺️'}
-    ]
-    
-    for item in nav_items:
-        if st.button(
-            f"{item['icon']} {item['name']}",
-            key=f"nav_{item['name']}",
-            use_container_width=True,
-            type="primary" if st.session_state.active_page == item['name'] else "secondary"
-        ):
-            st.session_state.active_page = item['name']
-            st.rerun()
 
 # Stats Cards
 def render_stats():
     df = load_rainfall_data()
     
-    # Rendered in sidebar for better focus
-    st.markdown("### 📈 Project Metrics")
+    col1, col2, col3, col4 = st.columns(4)
     
-    years = df['Year'].nunique() if df is not None else 120
-    ai_status = "Active" if GEMINI_AVAILABLE else "Docs Mode"
-    ai_icon = "✅" if GEMINI_AVAILABLE else "📖"
+    with col1:
+        st.markdown("""
+        <div class="stats-card fade-in">
+            <div class="stats-number">36</div>
+            <div class="stats-label">Regions Covered</div>
+        </div>
+        """, unsafe_allow_html=True)
     
-    stats = [
-        ("36", "Regions Covered"),
-        (f"{years}+", "Years of Data"),
-        ("22", "Languages"),
-        (ai_icon, f"AI {ai_status}")
-    ]
-    
-    # Display stats in 2x2 grid in sidebar or vertical stack
-    for val, label in stats:
+    with col2:
+        years = df['Year'].nunique() if df is not None else 120
         st.markdown(f"""
-        <div class="stats-card fade-in" style="margin-bottom: 10px; padding: 12px;">
-            <div class="stats-number" style="font-size: 1.6rem; margin-bottom: 0;">{val}</div>
-            <div class="stats-label" style="font-size: 0.75rem;">{label}</div>
+        <div class="stats-card fade-in">
+            <div class="stats-number">{years}+</div>
+            <div class="stats-label">Years of Data</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown("""
+        <div class="stats-card fade-in">
+            <div class="stats-number">22</div>
+            <div class="stats-label">Languages</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        ai_status = "Active" if GEMINI_AVAILABLE else "Document Mode"
+        st.markdown(f"""
+        <div class="stats-card fade-in">
+            <div class="stats-number">{"✓" if GEMINI_AVAILABLE else "○"}</div>
+            <div class="stats-label">AI {ai_status}</div>
         </div>
         """, unsafe_allow_html=True)
 
 # Main App
 def main():
-    # Initialize Session State
-    if 'active_pipeline' not in st.session_state:
-        st.session_state.active_pipeline = load_main_pipeline()
-    if 'messages' not in st.session_state:
-        st.session_state.messages = []
-    if 'active_page' not in st.session_state:
-        st.session_state.active_page = 'Chat'
-
-    # Sidebar with Navigation
+    render_hero()
+    render_stats()
+    
+    # Sidebar
     with st.sidebar:
-        st.markdown("### 🌦️ MeghSutra AI")
-        st.markdown("---")
-        
-        # Language Selector
-        st.markdown("#### 🌍 Language / भाषा")
-        if 'language' not in st.session_state:
-            st.session_state.language = 'en'
-        
-        selected_language = st.selectbox(
-            "Select your language",
-            options=list(LANGUAGES.keys()),
-            format_func=lambda x: LANGUAGES[x],
-            key='language_selector',
-            index=list(LANGUAGES.keys()).index(st.session_state.language)
-        )
-        
-        if selected_language != st.session_state.language:
-            st.session_state.language = selected_language
-            st.success(f"Language changed to {LANGUAGES[selected_language]}")
-            st.rerun()
-        
-        st.markdown("---")
-        
-        # Navigation Cards in Sidebar
-        st.markdown("#### Navigation")
-        render_navigation()
-        
-        st.markdown("---")
-        
-        # Project Metrics
-        render_stats()
-        
-        st.markdown("---")
         st.markdown("### 🎛️ Control Panel")
         
         if GEMINI_AVAILABLE:
@@ -504,35 +364,39 @@ def main():
             st.session_state.active_pipeline = load_main_pipeline()
             st.session_state.messages = []
             st.success("Switched to main climate database.")
+        
+        st.markdown("---")
+        
+        uploaded_file = st.file_uploader("📄 Or, analyze your own PDF", type="pdf")
+        if uploaded_file:
+            if st.button(f"Process '{uploaded_file.name}'", use_container_width=True):
+                with st.spinner("Processing document..."):
+                    st.session_state.active_pipeline = create_temp_pipeline_from_file(uploaded_file)
+                    st.session_state.messages = []
+                    st.success(f"Loaded {uploaded_file.name}")
     
-    # Main content area with header
-    render_hero()
+    # Main Tabs
+    tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "📊 Dashboard", "🗺️ Region Explorer", "📑 Documents"])
     
-    # Split View: Chat on left, Content on right
-    if st.session_state.active_page == 'Chat':
-        # Full width for chat only
+    with tab1:
         render_chat_tab()
-    else:
-        # Split view: Chat panel (left) + Content (right)
-        chat_col, content_col = st.columns([1, 2])
-        
-        with chat_col:
-            st.markdown("### 💬 Quick Chat")
-            render_chat_panel()
-        
-        with content_col:
-            if st.session_state.active_page == 'Dashboard':
-                render_dashboard_tab()
-            elif st.session_state.active_page == 'Explorer':
-                render_region_explorer_tab()
+    
+    with tab2:
+        render_dashboard_tab()
+    
+    with tab3:
+        render_region_explorer_tab()
+    
+    with tab4:
+        render_documents_tab()
 
 def render_chat_tab():
-    st.markdown("### 💬 Chat with MeghSutra AI")
+    st.markdown("### 💬 Ask MeghSutra Anything")
     
-    render_chat_panel()
-
-def render_chat_panel():
-    """Reusable chat panel for split view"""
+    if 'active_pipeline' not in st.session_state:
+        st.session_state.active_pipeline = load_main_pipeline()
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
     
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -542,10 +406,6 @@ def render_chat_panel():
         if not st.session_state.active_pipeline:
             st.warning("Please load a knowledge base first.")
         else:
-            # Get user's selected language
-            user_lang = st.session_state.get('language', 'en')
-            
-            # Store original prompt in user's language
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
@@ -553,30 +413,16 @@ def render_chat_panel():
             with st.chat_message("assistant"):
                 with st.spinner("Thinking..."):
                     pipeline = st.session_state.active_pipeline
-                    
-                    # Translate query to English for RAG processing
-                    if user_lang != 'en':
-                        english_query = translate_to_english(prompt, user_lang)
-                    else:
-                        english_query = prompt
-                    
-                    # Process with RAG pipeline in English
-                    context = pipeline.retrieve(english_query)
+                    context = pipeline.retrieve(prompt)
                     if not context:
-                        response_english = "I couldn't find relevant information in the document to answer that."
+                        response_text = "I couldn't find relevant information in the document to answer that."
                     else:
-                        answer = pipeline.generate(english_query, context)
+                        answer = pipeline.generate(prompt, context)
                         sources = set(chunk['source_file'] for chunk in context if 'source_file' in chunk)
                         if sources:
-                            response_english = f"{answer}\n\n**Sources:**\n- " + "\n- ".join(sources)
+                            response_text = f"{answer}\n\n**Sources:**\n- " + "\n- ".join(sources)
                         else:
-                            response_english = answer
-                    
-                    # Translate response back to user's language
-                    if user_lang != 'en':
-                        response_text = translate_from_english(response_english, user_lang)
-                    else:
-                        response_text = response_english
+                            response_text = answer
                     
                     st.markdown(response_text)
             
