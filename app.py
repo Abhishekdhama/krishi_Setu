@@ -326,7 +326,9 @@ class RAGPipeline:
         # Fixed: chunks use 'content' key, not 'text'
         context_text = "\n\n".join([chunk.get('content', chunk.get('text', '')) for chunk in context])
         
-        if GEMINI_AVAILABLE:
+        # Temporarily disabled Gemini due to model version issues
+        # Will show clean document excerpts instead
+        if False and GEMINI_AVAILABLE:  # Disabled for now
             try:
                 # Use gemini-pro for v1 API (gemini-1.5-flash not available in v1beta)
                 model = genai.GenerativeModel('gemini-pro')
@@ -343,8 +345,16 @@ Answer:"""
             except Exception as e:
                 st.warning(f"Gemini API error: {str(e)}. Showing document excerpts instead.")
         
-        # Fallback to document excerpts
-        return f"**Relevant Information:**\n\n{context_text[:500]}..."
+        # Show clean document excerpts (first 1000 chars from each chunk)
+        clean_excerpts = []
+        for i, chunk in enumerate(context[:3], 1):  # Show top 3 results
+            content = chunk.get('content', chunk.get('text', ''))
+            source = chunk.get('source_file', 'Unknown source')
+            # Clean up the content - take first 300 chars
+            clean_content = content[:300].strip()
+            clean_excerpts.append(f"**Excerpt {i}** (from {source}):\n{clean_content}...")
+        
+        return "\n\n".join(clean_excerpts)
 
 # Helper Functions
 def load_main_pipeline():
