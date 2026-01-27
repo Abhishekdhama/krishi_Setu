@@ -335,7 +335,7 @@ class RAGPipeline:
                 # Use Gemini 1.5 Flash via REST API
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
                 
-               headers = {'Content-Type': 'application/json'}
+                headers = {'Content-Type': 'application/json'}
                 
                 payload = {
                     "contents": [{
