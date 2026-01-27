@@ -289,13 +289,22 @@ class RAGPipeline:
         self.load_vector_store()
     
     def load_vector_store(self):
-        index_path = os.path.join(self.vector_store_path, "faiss_index.bin")
-        chunks_path = os.path.join(self.vector_store_path, "chunks.pkl")
+        # Updated to match actual vector store file names
+        index_path = os.path.join(self.vector_store_path, "knowledge.index")
+        chunks_path = os.path.join(self.vector_store_path, "metadata.pkl")
         
         if os.path.exists(index_path) and os.path.exists(chunks_path):
-            self.index = faiss.read_index(index_path)
-            with open(chunks_path, 'rb') as f:
-                self.chunks = pickle.load(f)
+            try:
+                self.index = faiss.read_index(index_path)
+                with open(chunks_path, 'rb') as f:
+                    self.chunks = pickle.load(f)
+                print(f"✅ Loaded vector store: {len(self.chunks)} chunks")
+            except Exception as e:
+                print(f"❌ Error loading vector store: {e}")
+                self.index = None
+                self.chunks = None
+        else:
+            print(f"⚠️ Vector store not found at {self.vector_store_path}")
     
     def retrieve(self, query, top_k=3):
         if self.index is None or self.chunks is None:
