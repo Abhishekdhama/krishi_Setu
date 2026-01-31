@@ -584,11 +584,73 @@ def render_chat_tab():
 def render_chat_panel():
     """Reusable chat panel for split view"""
     
+    # Voice Input Section
+    st.markdown("#### 🎤 Voice Input")
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        st.info(f"🌍 Current language: {LANGUAGES.get(st.session_state.get('language', 'en'), 'English')}")
+    
+    with col2:
+        if st.button("🎤 Speak", use_container_width=True):
+            try:
+                import speech_recognition as sr
+                
+                # Map language codes to speech recognition format
+                lang_map = {
+                    'hi': 'hi-IN',  # Hindi
+                    'bn': 'bn-IN',  # Bengali
+                    'te': 'te-IN',  # Telugu
+                    'mr': 'mr-IN',  # Marathi
+                    'ta': 'ta-IN',  # Tamil
+                    'gu': 'gu-IN',  # Gujarati
+                    'kn': 'kn-IN',  # Kannada
+                    'ml': 'ml-IN',  # Malayalam
+                    'pa': 'pa-IN',  # Punjabi
+                    'en': 'en-IN'   # English
+                }
+                
+                user_lang = st.session_state.get('language', 'en')
+                speech_lang = lang_map.get(user_lang, 'en-IN')
+                
+                recognizer = sr.Recognizer()
+                
+                with st.spinner(f"🎙️ Listening in {LANGUAGES.get(user_lang)}..."):
+                    with sr.Microphone() as source:
+                        recognizer.adjust_for_ambient_noise(source, duration=0.5)
+                        audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)
+                    
+                    # Recognize speech
+                    text = recognizer.recognize_google(audio, language=speech_lang)
+                    
+                    # Store in session state for display
+                    if 'voice_text' not in st.session_state:
+                        st.session_state.voice_text = ""
+                    st.session_state.voice_text = text
+                    
+                    st.success(f"✅ Heard: {text}")
+                    st.rerun()
+            
+            except sr.WaitTimeoutError:
+                st.error("⏱️ No speech detected. Please try again.")
+            except sr.UnknownValueError:
+                st.error("❌ Could not understand audio. Please speak clearly.")
+            except sr.RequestError as e:
+                st.error(f"❌ Speech service error: {str(e)}")
+            except Exception as e:
+                st.error(f"❌ Microphone error: {str(e)}. Ensure microphone is connected.")
+    
+    # Display chat messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    if prompt := st.chat_input("Ask a question about climate data..."):
+    # Chat input (pre-filled with voice text if available)
+    default_text = st.session_state.get('voice_text', '')
+    if prompt := st.chat_input("Ask a question about climate data...", key="chat_input"):
+        # Clear voice text after using it
+        if 'voice_text' in st.session_state:
+            st.session_state.voice_text = ""
         if not st.session_state.active_pipeline:
             st.warning("Please load a knowledge base first.")
         else:
