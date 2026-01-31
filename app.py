@@ -384,10 +384,28 @@ def load_main_pipeline():
 
 @st.cache_data
 def load_rainfall_data():
+    """Load and cache rainfall data from CSV"""
     try:
-        df = pd.read_csv("data/master_rainfall_india.csv")
+        csv_path = os.path.join('data', 'master_rainfall_india.csv')
+        if not os.path.exists(csv_path):
+            st.error(f"❌ Data file not found: {csv_path}")
+            return None
+        
+        df = pd.read_csv(csv_path)
+        
+        # Basic data cleaning
+        df = df.dropna(subset=['Subdivision', 'Year'])
+        df['Year'] = df['Year'].astype(int)
+        
+        # Fill NaN values in monthly columns with 0
+        month_cols = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        for col in month_cols:
+            if col in df.columns:
+                df[col] = df[col].fillna(0)
+        
         return df
-    except:
+    except Exception as e:
+        st.error(f"❌ Error loading rainfall data: {str(e)}")
         return None
 
 def create_temp_pipeline_from_file(uploaded_file):
