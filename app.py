@@ -81,66 +81,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for premium design
-st.markdown("""
-<style>
-    /* Import Google Font */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-    
-    /* Global Styles */
-    * {
-        font-family: 'Inter', sans-serif;
-    }
-    
-    /* Main Background - Force gradient everywhere */
-    .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
-    }
-    
-    /* Remove ALL black backgrounds */
-    .main .block-container {
-        background: transparent !important;
-        padding-bottom: 0 !important;
-    }
-    
-    .main {
-        background: transparent !important;
-    }
-    
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
-    }
-    
-    /* Remove bottom padding/margin that creates black space */
-    .block-container {
-        padding-bottom: 1rem !important;
-        margin-bottom: 0 !important;
-    }
-    
-    /* Hide Streamlit menu and footer */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Hero Section - Compact & Left Aligned */
-    .hero-section {
-        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        padding: 15px 25px;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
-        animation: fadeIn 0.8s ease-in;
-        text-align: left;
-    }
-    
-    .hero-title {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: white;
-        margin-bottom: 3px;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-    }
-    
-    .hero-subtitle {
         font-size: 0.85rem;
         color: #e0e7ff;
         font-weight: 300;
@@ -529,6 +469,17 @@ def main():
         
         # Project Metrics
         render_stats()
+        
+        st.markdown("---")
+        
+        # Theme Toggle
+        st.markdown("#### 🎨 Theme")
+        theme_icon = "🌙" if st.session_state.theme == 'dark' else "☀️"
+        theme_label = "Light Mode" if st.session_state.theme == 'dark' else "Dark Mode"
+        
+        if st.button(f"{theme_icon} {theme_label}", use_container_width=True):
+            st.session_state.theme = 'light' if st.session_state.theme == 'dark' else 'dark'
+            st.rerun()
         
         st.markdown("---")
         st.markdown("### 🎛️ Control Panel")
