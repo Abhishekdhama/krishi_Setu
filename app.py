@@ -629,11 +629,28 @@ def render_chat_panel():
                         response_english = "I couldn't find relevant information in the document to answer that."
                     else:
                         answer = pipeline.generate(english_query, context)
-                        sources = set(chunk['source_file'] for chunk in context if 'source_file' in chunk)
-                        if sources:
-                            response_english = f"{answer}\n\n**Sources:**\n- " + "\n- ".join(sources)
-                        else:
-                            response_english = answer
+                        
+                        # Enhanced source citations with excerpts
+                        sources_dict = {}
+                        for chunk in context:
+                            source_file = chunk.get('source_file', 'Unknown source')
+                            content = chunk.get('content', chunk.get('text', ''))
+                            if source_file not in sources_dict:
+                                sources_dict[source_file] = []
+                            # Store first 200 chars of excerpt
+                            sources_dict[source_file].append(content[:200])
+                        
+                        # Format response with sources
+                        response_english = f"{answer}\n\n"
+                        if sources_dict:
+                            response_english += "📚 **Sources:**\n"
+                            for i, (source, excerpts) in enumerate(sources_dict.items(), 1):
+                                response_english += f"{i}. **{source}**\n"
+                                # Add expandable excerpt section
+                                for j, excerpt in enumerate(excerpts[:2], 1):  # Show max 2 excerpts per source
+                                    excerpt_clean = excerpt.replace('\n', ' ').strip()
+                                    response_english += f"   > *Excerpt {j}:* {excerpt_clean}...\n"
+                                response_english += "\n"
                     
                     # Translate response back to user's language
                     if user_lang != 'en':
