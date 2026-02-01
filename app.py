@@ -747,6 +747,47 @@ def render_dashboard_tab():
         min_rainfall = filtered_df['Annual'].min()
         min_year = filtered_df[filtered_df['Annual'] == min_rainfall]['Year'].values[0]
         st.metric("Minimum Rainfall", f"{min_rainfall:.1f} mm", f"in {min_year}")
+    
+    # NEW: Monsoon Season Heatmap
+    st.markdown("#### Monsoon Rainfall Heatmap (Jun-Sep)")
+    
+    # Prepare data for heatmap
+    monsoon_months = ['Jun', 'Jul', 'Aug', 'Sep']
+    heatmap_data = []
+    years_list = []
+    
+    for year in filtered_df['Year'].values:
+        year_data = filtered_df[filtered_df['Year'] == year]
+        if not year_data.empty:
+            row_data = []
+            for month in monsoon_months:
+                if month in df.columns:
+                    row_data.append(year_data[month].values[0])
+                else:
+                    row_data.append(0)
+            heatmap_data.append(row_data)
+            years_list.append(int(year))
+    
+    # Create heatmap
+    fig3 = go.Figure(data=go.Heatmap(
+        z=heatmap_data,
+        x=monsoon_months,
+        y=years_list,
+        colorscale='Blues',
+        hovertemplate='Year: %{y}<br>Month: %{x}<br>Rainfall: %{z:.1f} mm<extra></extra>',
+        colorbar=dict(title="Rainfall (mm)")
+    ))
+    
+    fig3.update_layout(
+        template='plotly_dark',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        height=400,
+        xaxis_title="Month",
+        yaxis_title="Year",
+        yaxis=dict(autorange='reversed')  # Recent years on top
+    )
+    st.plotly_chart(fig3, use_container_width=True)
 
 def render_region_explorer_tab():
     st.markdown("### 🗺️ Explore Indian Climate Regions")
